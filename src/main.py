@@ -17,7 +17,7 @@ class App:
 
 
     def run(self) -> None:
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         with LogContext(component="main_app", env=self.settings.env, execution_id=self.execution_id):
 
@@ -32,7 +32,7 @@ class App:
 
                 # do something
 
-                duration_ms = int((time.time() - start_time) * 1000)
+                duration_ms = round((time.perf_counter() - start_time) * 1000)
 
                 log_info(
                     logger=self.logger,
@@ -42,7 +42,7 @@ class App:
                 )
 
             except Exception as exc:
-                duration_ms = int((time.time() - start_time) * 1000)
+                duration_ms = round((time.perf_counter() - start_time) * 1000)
 
                 log_error(
                     logger=self.logger,
