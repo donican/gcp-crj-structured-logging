@@ -2,7 +2,6 @@ import uuid
 from contextvars import ContextVar
 from typing import Any, Dict
 
-# Variável global que mantém o contexto atual da execução
 _log_context: ContextVar[Dict[str, Any]] = ContextVar("log_context", default={})
 
 class LogContext:
