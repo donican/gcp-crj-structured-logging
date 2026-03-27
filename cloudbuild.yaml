@@ -1,0 +1,31 @@
+steps:
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - '${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'jobs'
+      - 'deploy'
+      - 'cr-job-structured-logging'
+      - '--image=${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
+      - '--region=${_CLOUD_RUN_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--set-env-vars=BUCKET_NAME=${_BUCKET_NAME}'
+
+images:
+  - '${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
