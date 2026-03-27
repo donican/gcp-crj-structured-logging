@@ -3,7 +3,7 @@ import logging
 import sys
 from logger.context import get_current_context
 
-def setup_logging() -> None:
+def setup_logging() -> logging.Logger:
     logger = logging.getLogger()
 
     if logger.handlers:
@@ -16,20 +16,25 @@ def setup_logging() -> None:
 
     logger.addHandler(handler)
 
-def log_info(logger: logging.Logger, message: str, **fields) -> None:
+    return logger
+
+def _log(logger: logging.Logger, severity:str, message: str, **fields) -> None:
     context = get_current_context()
     payload = {
+        "logger": logger.name,
         "message": message,
-        "severity": "INFO",
+        "severity": severity,
         **context,
         **fields
     }
-    logger.info(json.dumps(payload, ensure_ascii=False))
+
+    if severity == "ERROR":
+        logger.error(json.dumps(payload, ensure_ascii=False))
+    else:
+        logger.info(json.dumps(payload, ensure_ascii=False))
+
+def log_info(logger: logging.Logger, message: str, **fields) -> None:
+    _log(logger, "INFO", message, **fields)
 
 def log_error(logger: logging.Logger, message: str, **fields) -> None:
-    payload = {
-        "message": message,
-        "severity": "ERROR", 
-        **fields
-    }
-    logger.error(json.dumps(payload, ensure_ascii=False))
+    _log(logger, "ERROR", message, **fields)
