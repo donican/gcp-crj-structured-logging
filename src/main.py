@@ -20,13 +20,6 @@ class App:
         start_time = time.time()
 
         with LogContext(component="main_app", env=self.settings.env, execution_id=self.execution_id):
-            
-            log_info(
-                logger=self.logger,
-                message="Application initialized",
-                event="app_initialized",
-                version=self.settings.version
-            )
 
             log_info(
                 logger=self.logger,
