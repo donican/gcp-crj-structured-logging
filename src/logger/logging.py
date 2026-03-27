@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from logger.context import get_current_context
 
 def setup_logging() -> None:
     logger = logging.getLogger()
@@ -16,9 +17,11 @@ def setup_logging() -> None:
     logger.addHandler(handler)
 
 def log_info(logger: logging.Logger, message: str, **fields) -> None:
+    context = get_current_context()
     payload = {
         "message": message,
         "severity": "INFO",
+        **context,
         **fields
     }
     logger.info(json.dumps(payload, ensure_ascii=False))
