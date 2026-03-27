@@ -13,14 +13,12 @@ class LogContext:
         self.token = None
 
     def __enter__(self):
-        # Salva o contexto atual e mescla com os novos atributos
         current = _log_context.get().copy()
         current.update(self.attributes)
         self.token = _log_context.set(current)
         return current
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Restaura o contexto anterior ao sair do bloco
         _log_context.reset(self.token)
 
 def get_current_context() -> Dict[str, Any]:
