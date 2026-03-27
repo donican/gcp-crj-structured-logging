@@ -22,7 +22,7 @@ steps:
       - '--image=${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
       - '--region=${_CLOUD_RUN_REGION}'
       - '--service-account=${_SERVICE_ACCOUNT}'
-      - '--set-env-vars=BUCKET_NAME=${_BUCKET_NAME}'
+      - '--set-env-vars=BUCKET_NAME=${_BUCKET_NAME},ENV=${_ENV},VERSION=${_VERSION}'
 
 images:
   - '${_CLOUD_RUN_REGION}-docker.pkg.dev/$PROJECT_ID/structured-logging/structured-logging:latest'
