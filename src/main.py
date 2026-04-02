@@ -34,10 +34,12 @@ class App:
 
                 #self.storage.upload_text("teste.txt", "My content")
                 
-                self.storage.extract_zip_to_bucket(
-                    source_object_name="2026-02/Empresas3.zip",
-                    destination_bucket_name="dev-processed-structured-logging"
-                )
+                # self.storage.extract_zip_to_bucket(
+                #     source_object_name="2026-02/Empresas3.zip",
+                #     destination_bucket_name="dev-processed-structured-logging"
+                # )
+
+                self.storage.transform_csv_to_parquet()
 
                 duration_ms = round((time.perf_counter() - start_time) * 1000)
 

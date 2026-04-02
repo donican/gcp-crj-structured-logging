@@ -1,9 +1,13 @@
 from __future__ import annotations
 import logging
+import pandas as pd
 from google.cloud import storage
+import io
 import mimetypes
 import zipfile
 from logger.logging import log_error, log_info
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+
 
 
 
@@ -86,7 +90,6 @@ class GCSService:
                             )
                             continue
                     
-                    # Não adianta porque o
                     content_type, content_encoding = mimetypes.guess_type(member.filename)
 
 
@@ -142,3 +145,85 @@ class GCSService:
 
         except Exception as exc:
             raise
+    
+    def _write_chunk_to_gcs (self, df, sink_bucket_name, sink_object_name) -> str:
+        buffer = io.BytesIO()
+
+        df.to_parquet(
+            buffer,
+            index=False,
+            compression="snappy",
+            engine="pyarrow"
+        )
+        
+        buffer.seek(0)
+
+        sink_bucket = self.client.bucket(sink_bucket_name)
+        sink_blob_name = f"{sink_object_name}"
+        sink_blob = sink_bucket.blob(sink_blob_name)
+
+        sink_blob.upload_from_file(
+            buffer,
+            content_type="application/octet-stream"
+        )
+
+        return f"gs://{sink_bucket_name}/{sink_object_name}"
+
+    def transform_csv_to_parquet(
+            self,
+            chumk:int= 5 * 100 * 1000,
+            source_prefix:str = "2026-02",
+            sink_bucket_name:str = "dev-processed-structured-logging",
+            sink_prefix:str = "2026-02",
+            compression: str = "zip"
+    ):
+        
+        max_workers = 15
+        in_flight = set()
+
+
+        source_bucket = self.client.bucket(self.bucket_name)
+        source_blob_name = f"{source_prefix}/Estabelecimentos0.zip"
+        source_blob = source_bucket.blob(blob_name=source_blob_name)
+
+        with source_blob.open("rb") as f:
+            reader = pd.read_csv(
+                f,
+                compression=compression,
+                chunksize=chumk,
+                sep=";",
+                dtype=str,
+                encoding="latin1"
+                )
+            
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+
+                for n, df in enumerate(reader):
+                    sink_object_name = f"{sink_prefix}/Estabelecimentos0/part-{n:05d}.parquet"
+                    
+                    future = executor.submit(
+                        self._write_chunk_to_gcs,
+                        df.copy(),
+                        sink_bucket_name,
+                        sink_object_name
+                    )
+                    in_flight.add(future)
+
+                    if len(in_flight) >= max_workers:
+                        done, in_flight = wait(in_flight, return_when=FIRST_COMPLETED)
+
+                        for f in done:
+                            print(f.result())
+
+                for f in in_flight:
+                    print(f.result())
+
+            log_info(
+                self.logger,
+                "Parquet upload completed",
+                event="gcs_parquet_upload_completed",
+                rows=len(df),
+            )
+
+        return
+        
