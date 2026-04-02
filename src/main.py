@@ -5,6 +5,7 @@ import uuid
 from logger.logging import setup_logging, log_info, log_error
 from logger.context import LogContext
 from config.settings import Settings
+from bucket.gcs_service import GCSService
 
 
 class App:
@@ -13,6 +14,7 @@ class App:
 
         self.logger = logging.getLogger(__name__)        
         self.settings = Settings()
+        self.storage = GCSService(self.settings.bucket_name)
         self.execution_id = str(uuid.uuid4())
 
 
@@ -30,7 +32,14 @@ class App:
             try:
                 self.settings.validate()
 
-                # do something
+                #self.storage.upload_text("teste.txt", "My content")
+                
+                # self.storage.extract_zip_to_bucket(
+                #     source_object_name="2026-02/Empresas3.zip",
+                #     destination_bucket_name="dev-processed-structured-logging"
+                # )
+
+                self.storage.transform_csv_to_parquet()
 
                 duration_ms = round((time.perf_counter() - start_time) * 1000)
 
