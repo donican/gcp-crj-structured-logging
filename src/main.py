@@ -38,8 +38,22 @@ class App:
                 #     source_object_name="2026-02/Empresas3.zip",
                 #     destination_bucket_name="dev-processed-structured-logging"
                 # )
+                
+                files = self.storage.list_zip_files(prefix="2026-02/")
+                task_index = self.settings.cloud_run_task_index
 
-                self.storage.transform_csv_to_parquet()
+
+                file_to_process = files[task_index]
+                log_info(
+                    logger=self.logger,
+                    message=f"Processing task {task_index}. Reading file {file_to_process}",
+                    event="task_processing"
+                )
+
+
+                #file_to_process = files[11]
+                print(file_to_process)
+                self.storage.transform_csv_to_parquet(source_blob_name=file_to_process)
 
                 duration_ms = round((time.perf_counter() - start_time) * 1000)
 

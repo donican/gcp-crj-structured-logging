@@ -10,8 +10,10 @@ class Settings:
         self.bucket_name = os.getenv("BUCKET_NAME","").strip()
         self.env = os.getenv("ENV", "DEV").strip()
         self.version = os.getenv("VERSION", "1.0.0").strip()
+        self.cloud_run_task_index = int(os.getenv("CLOUD_RUN_TASK_INDEX", "0"))
 
         self.logger = logging.getLogger(__name__)
+
 
     def validate(self) -> None:
 
