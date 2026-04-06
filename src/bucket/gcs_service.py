@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 from google.cloud import storage
 import io
+import os
 import mimetypes
 import zipfile
 from logger.logging import log_error, log_info
@@ -169,21 +170,36 @@ class GCSService:
 
         return f"gs://{sink_bucket_name}/{sink_object_name}"
 
+    def list_zip_files(self, prefix: str) -> list[str]:
+        bucket = self.client.bucket(self.bucket_name)
+
+        blobs = self.client.list_blobs(bucket, prefix=prefix)
+
+        files = [
+            blob.name
+            for blob in blobs
+            if blob.name.endswith(".zip")
+        ]
+
+        files.sort()
+
+        return files
+
     def transform_csv_to_parquet(
             self,
-            chumk:int= 5 * 100 * 1000,
-            source_prefix:str = "2026-02",
+            source_blob_name:str,
+            chumk:int= 1 * 1000 * 1000,
             sink_bucket_name:str = "dev-processed-structured-logging",
-            sink_prefix:str = "2026-02",
             compression: str = "zip"
     ):
-        
-        max_workers = 15
+        sink_prefix = os.path.splitext(source_blob_name)[0]
+        print(sink_prefix)
+        max_workers = 10
         in_flight = set()
 
 
         source_bucket = self.client.bucket(self.bucket_name)
-        source_blob_name = f"{source_prefix}/Estabelecimentos0.zip"
+        #source_blob_name = f"{source_prefix}/Estabelecimentos0.zip"
         source_blob = source_bucket.blob(blob_name=source_blob_name)
 
         with source_blob.open("rb") as f:
@@ -199,8 +215,8 @@ class GCSService:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
 
                 for n, df in enumerate(reader):
-                    sink_object_name = f"{sink_prefix}/Estabelecimentos0/part-{n:05d}.parquet"
-                    
+                    sink_object_name = f"{sink_prefix}/part-{n:05d}.parquet"
+                    print(sink_object_name)
                     future = executor.submit(
                         self._write_chunk_to_gcs,
                         df.copy(),
